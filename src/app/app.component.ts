@@ -1,32 +1,83 @@
+import { WebSocketService } from './services/web-socket.service';
 import { Component } from '@angular/core';
 import { SwPush } from '@angular/service-worker';
-import { PushNotificationService } from './push-notification.service';
+import { PushNotificationService } from './services/push-notification.service';
+import { MatSnackBar } from '@angular/material';
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  readonly VAPID_PUBLIC_KEY =
-    'BP9KGNI0bBXKbm-77j400e6BR5Re6ULkHfp0M-QmytS3ullXTd8hkY1wAq9OSoGe3UXz9TkkONmzj2huSzP6W6o';
+  private stompClient: any;
+  greetings: string[] = [];
+  disabled: boolean;
+  name: string;
 
   constructor(
-    private swPush: SwPush,
-    private pushService: PushNotificationService
-  ) {}
-  // comment
-  subscribeToNotifications() {
-    if (this.swPush.isEnabled) {
-      this.swPush
-        .requestSubscription({
-          serverPublicKey: this.VAPID_PUBLIC_KEY
-        })
-        .then(sub => {
-          this.pushService.sendSubscriptionToServer(sub).subscribe();
-        })
-        .catch(err =>
-          console.error('Could not subscribe to notifications', err)
-        );
+    private pushService: PushNotificationService,
+    private webService: WebSocketService,
+    private snackBar: MatSnackBar
+  ) {
+    this.pushService.requestPermission();
+    this.stompClient = webService.connect();
+  }
+
+  notify() {
+    const data: Array<any> = [];
+    data.push({
+      title: 'Approval',
+      alertContent: 'This is First Alert -- By Debasis Saha'
+    });
+    data.push({
+      title: 'Request',
+      alertContent: 'This is Second Alert -- By Debasis Saha'
+    });
+    data.push({
+      title: 'Leave Application',
+      alertContent: 'This is Third Alert -- By Debasis Saha'
+    });
+    data.push({
+      title: 'Approval',
+      alertContent: 'This is Fourth Alert -- By Debasis Saha'
+    });
+    data.push({
+      title: 'To Do Task',
+      alertContent: 'This is Fifth Alert -- By Debasis Saha'
+    });
+    this.pushService.generateNotification(data);
+  }
+
+  public connect() {
+    this.stompClient.connect({}, function(frame) {
+      this.stompClient.subscribe('/topic/hi', function(hello) {
+        this.showGreeting(JSON.parse(hello.body).messsage);
+      });
+    });
+  }
+  public disconnect() {
+    if (this.stompClient != null) {
+      this.stompClient.disconnect();
     }
+    this.setConnected(false);
+    console.log('Disconnected!');
+  }
+  setConnected(connected: boolean) {
+    this.disabled = !connected;
+
+    if (connected) {
+      this.greetings = [];
+    }
+  }
+  showGreeting(message) {
+    this.greetings.push(message);
+  }
+  sendName() {
+    this.stompClient.send(
+      '/app/hello',
+      {},
+      JSON.stringify({ name: 'mashrabbek' })
+    );
   }
 }

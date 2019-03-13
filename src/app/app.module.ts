@@ -5,18 +5,25 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { ServiceWorkerModule } from '@angular/service-worker';
 import { environment } from '../environments/environment';
-import { PushNotificationService } from './push-notification.service';
+import { PushNotificationService } from './services/push-notification.service';
+import { HttpClientModule } from '@angular/common/http';
+import { WebSocketService } from './services/web-socket.service';
+import { MatSnackBarModule } from '@angular/material';
+import { FormsModule } from '@angular/forms';
 
 @NgModule({
   declarations: [AppComponent],
   imports: [
+    FormsModule,
+    MatSnackBarModule,
+    HttpClientModule,
     BrowserModule,
     AppRoutingModule,
     ServiceWorkerModule.register('ngsw-worker.js', {
       enabled: environment.production
     })
   ],
-  providers: [PushNotificationService],
+  providers: [PushNotificationService, WebSocketService],
   bootstrap: [AppComponent]
 })
 export class AppModule {}
