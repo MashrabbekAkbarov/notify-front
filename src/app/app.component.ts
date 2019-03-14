@@ -1,61 +1,75 @@
-import { WebSocketService } from './services/web-socket.service';
-import { Component } from '@angular/core';
-import { SwPush } from '@angular/service-worker';
-import { PushNotificationService } from './services/push-notification.service';
-import { MatSnackBar } from '@angular/material';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import {
+  PushNotificationService,
+  Permission
+} from './services/push-notification.service';
+import * as Sock from 'sockjs-client';
+import * as Stomp from 'stompjs';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent {
-  private stompClient: any;
+export class AppComponent implements OnInit, OnDestroy {
+  private stompClient: any = null;
   greetings: string[] = [];
   disabled: boolean;
-  name: string;
 
-  constructor(
-    private pushService: PushNotificationService,
-    private webService: WebSocketService,
-    private snackBar: MatSnackBar
-  ) {
+  name: string;
+  title: string;
+  message: string;
+  permission: Permission;
+
+  constructor(private pushService: PushNotificationService) {
     this.pushService.requestPermission();
-    this.stompClient = webService.connect();
+  }
+
+  ngOnInit(): void {
+    this.disabled = false;
+    this.permission = this.pushService.permission;
+    console.log('Permission: ' + this.permission);
+    if (this.permission === 'granted') {
+      this.runNotificationService();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.disabled = true;
+  }
+
+  runNotificationService() {
+    this.connect();
   }
 
   notify() {
     const data: Array<any> = [];
     data.push({
       title: 'Approval',
-      alertContent: 'This is First Alert -- By Debasis Saha'
+      alertContent: 'This is First Alert'
     });
-    data.push({
-      title: 'Request',
-      alertContent: 'This is Second Alert -- By Debasis Saha'
-    });
-    data.push({
-      title: 'Leave Application',
-      alertContent: 'This is Third Alert -- By Debasis Saha'
-    });
-    data.push({
-      title: 'Approval',
-      alertContent: 'This is Fourth Alert -- By Debasis Saha'
-    });
-    data.push({
-      title: 'To Do Task',
-      alertContent: 'This is Fifth Alert -- By Debasis Saha'
-    });
+
     this.pushService.generateNotification(data);
   }
 
   public connect() {
-    this.stompClient.connect({}, function(frame) {
-      this.stompClient.subscribe('/topic/hi', function(hello) {
-        this.showGreeting(JSON.parse(hello.body).messsage);
+    const socket = new Sock(`http://localhost:8080/socket`);
+    this.stompClient = Stomp.over(socket);
+    console.log({ 'stompClient: ': this.stompClient });
+    const _this = this;
+    _this.stompClient.connect({}, function(frame) {
+      _this.setConnected(true);
+      console.log('Connected: ' + frame);
+      _this.stompClient.subscribe('/topic/hi', function(hello) {
+        console.log({ 'response: ': JSON.parse(hello.body).message });
+        // _this.showGreeting(JSON.parse(hello.body).message);
+        // _this.showNotification();
       });
     });
   }
+
+  public showNotification(message: any) {}
+
   public disconnect() {
     if (this.stompClient != null) {
       this.stompClient.disconnect();
@@ -63,21 +77,16 @@ export class AppComponent {
     this.setConnected(false);
     console.log('Disconnected!');
   }
-  setConnected(connected: boolean) {
+  public setConnected(connected: boolean) {
     this.disabled = !connected;
-
     if (connected) {
       this.greetings = [];
     }
   }
-  showGreeting(message) {
+  public showGreeting(message) {
     this.greetings.push(message);
   }
-  sendName() {
-    this.stompClient.send(
-      '/app/hello',
-      {},
-      JSON.stringify({ name: 'mashrabbek' })
-    );
+  public sendName() {
+    this.stompClient.send('/app/hello', {}, this.name);
   }
 }

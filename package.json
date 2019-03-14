@@ -7,7 +7,8 @@
     "build": "ng build",
     "test": "ng test",
     "lint": "ng lint",
-    "e2e": "ng e2e"
+    "e2e": "ng e2e",
+    "go": "http-server -p 8000 -c-1 dist/notify-front"
   },
   "private": true,
   "dependencies": {

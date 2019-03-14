@@ -34,6 +34,7 @@ export class PushNotificationService {
   public isSupported(): boolean {
     return 'Notification' in window;
   }
+
   requestPermission(): void {
     const self = this;
     console.log({ status: '>>>>' });
@@ -44,6 +45,7 @@ export class PushNotificationService {
       });
     }
   }
+
   create(title: string, options?: PushNotification): any {
     const self = this;
     return new Observable(function(obs) {
@@ -92,7 +94,6 @@ export class PushNotificationService {
     });
   }
 
-  ////////////
   public sendSubscriptionToServer(subscription: PushSubscription) {
     return this.http.post(SERVER_URL, subscription);
   }
