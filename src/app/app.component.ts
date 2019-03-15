@@ -13,12 +13,10 @@ import * as Stomp from 'stompjs';
 })
 export class AppComponent implements OnInit, OnDestroy {
   private stompClient: any = null;
-  greetings: string[] = [];
   disabled: boolean;
-
   name: string;
   title: string;
-  message: string;
+  content: string;
   permission: Permission;
 
   constructor(private pushService: PushNotificationService) {
@@ -26,30 +24,20 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.disabled = false;
+    this.disabled = true;
     this.permission = this.pushService.permission;
-    console.log('Permission: ' + this.permission);
-    if (this.permission === 'granted') {
-      this.runNotificationService();
-    }
+    console.log('Permission: ' + this.pushService.permission);
+    setTimeout(() => {
+      console.log('Permission after 2 sek: ' + this.pushService.permission);
+      if (this.pushService.permission === 'granted') {
+        this.connect();
+      }
+      this.disabled = false;
+    }, 2000);
   }
 
   ngOnDestroy(): void {
     this.disabled = true;
-  }
-
-  runNotificationService() {
-    this.connect();
-  }
-
-  notify() {
-    const data: Array<any> = [];
-    data.push({
-      title: 'Approval',
-      alertContent: 'This is First Alert'
-    });
-
-    this.pushService.generateNotification(data);
   }
 
   public connect() {
@@ -58,35 +46,38 @@ export class AppComponent implements OnInit, OnDestroy {
     console.log({ 'stompClient: ': this.stompClient });
     const _this = this;
     _this.stompClient.connect({}, function(frame) {
-      _this.setConnected(true);
       console.log('Connected: ' + frame);
-      _this.stompClient.subscribe('/topic/hi', function(hello) {
-        console.log({ 'response: ': JSON.parse(hello.body).message });
-        // _this.showGreeting(JSON.parse(hello.body).message);
-        // _this.showNotification();
+      _this.stompClient.subscribe('/topic/notification', function(
+        notification
+      ) {
+        console.log({ 'response: ': JSON.parse(notification.body) });
+        _this.showNotification(JSON.parse(notification.body));
       });
     });
   }
 
-  public showNotification(message: any) {}
+  public showNotification(message: any) {
+    const data: Array<any> = [];
+    // TODO
+    data.push(message);
+    this.pushService.generateNotification(data);
+  }
 
   public disconnect() {
     if (this.stompClient != null) {
       this.stompClient.disconnect();
     }
-    this.setConnected(false);
     console.log('Disconnected!');
   }
-  public setConnected(connected: boolean) {
-    this.disabled = !connected;
-    if (connected) {
-      this.greetings = [];
-    }
-  }
-  public showGreeting(message) {
-    this.greetings.push(message);
-  }
-  public sendName() {
-    this.stompClient.send('/app/hello', {}, this.name);
+
+  sendMessage() {
+    console.log({
+      message: JSON.stringify({ title: this.title, alertContent: this.content })
+    });
+    this.stompClient.send(
+      '/app/notification',
+      {},
+      JSON.stringify({ title: this.title, alertContent: this.content })
+    );
   }
 }

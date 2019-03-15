@@ -7,7 +7,6 @@ import { ServiceWorkerModule } from '@angular/service-worker';
 import { environment } from '../environments/environment';
 import { PushNotificationService } from './services/push-notification.service';
 import { HttpClientModule } from '@angular/common/http';
-import { WebSocketService } from './services/web-socket.service';
 import { MatSnackBarModule } from '@angular/material';
 import { FormsModule } from '@angular/forms';
 
@@ -23,7 +22,7 @@ import { FormsModule } from '@angular/forms';
       enabled: environment.production
     })
   ],
-  providers: [PushNotificationService, WebSocketService],
+  providers: [PushNotificationService],
   bootstrap: [AppComponent]
 })
 export class AppModule {}

@@ -1,25 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-
-const SERVER_URL = 'http://localhost:8080/sock';
+import { PushNotification } from '../interfaces/push-notification';
 
 export declare type Permission = 'denied' | 'granted' | 'default';
-
-export interface PushNotification {
-  body?: string;
-  icon?: string;
-  tag?: string;
-  data?: any;
-  renotify?: boolean;
-  silent?: boolean;
-  sound?: string;
-  noscreen?: boolean;
-  sticky?: boolean;
-  dir?: 'auto' | 'ltr' | 'rtl';
-  lang?: string;
-  vibrate?: number[];
-}
 
 @Injectable({
   providedIn: 'root'
@@ -35,9 +19,8 @@ export class PushNotificationService {
     return 'Notification' in window;
   }
 
-  requestPermission(): void {
+  requestPermission() {
     const self = this;
-    console.log({ status: '>>>>' });
     if ('Notification' in window) {
       Notification.requestPermission(function(status) {
         console.log({ status });
@@ -83,6 +66,7 @@ export class PushNotificationService {
       };
     });
   }
+
   generateNotification(source: Array<any>): void {
     const self = this;
     source.forEach(item => {
@@ -93,9 +77,4 @@ export class PushNotificationService {
       const notify = self.create(item.title, options).subscribe();
     });
   }
-
-  public sendSubscriptionToServer(subscription: PushSubscription) {
-    return this.http.post(SERVER_URL, subscription);
-  }
-  //
 }
